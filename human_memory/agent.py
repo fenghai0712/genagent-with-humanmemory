@@ -20,9 +20,11 @@ class MemoryAgent:
     """An agent that perceives, recalls, thinks, acts, and learns — backed by
     the human-like memory system at every step."""
 
-    def __init__(self, db_path: str = "agent_memory.db",
+    def __init__(self, db_path: Optional[str] = None,
                  config: Optional[MemoryConfig] = None,
                  llm_fn: Optional[Callable] = None):
+        if db_path is None:
+            db_path = os.environ.get("HUMAN_MEMORY_DB_PATH", "agent_memory.db")
         if config is None:
             config = MemoryConfig(
                 db_path=db_path,
@@ -311,9 +313,7 @@ class MemoryAgent:
 # ═══════════════════════════════════════════════════
 def cli():
     """Interactive CLI for the memory agent."""
-    DB = "agent_memory.db"
-
-    agent = MemoryAgent(db_path=DB)
+    agent = MemoryAgent()  # db_path from HUMAN_MEMORY_DB_PATH env or default
 
     print("=" * 50)
     print("  Memory Agent — 有记忆的 AI 助手")

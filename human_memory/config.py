@@ -1,4 +1,10 @@
+import os
 from dataclasses import dataclass, field
+
+
+def _env(key: str, default: str = "") -> str:
+    """Read HUMAN_MEMORY_* env var, with fallback."""
+    return os.environ.get(f"HUMAN_MEMORY_{key}", default)
 
 
 @dataclass
@@ -30,9 +36,9 @@ class MemoryConfig:
     spacing_tau_days: float = 1.0
 
     # Forgetting — capacity-based (interference model, not time-decay)
-    episodic_capacity: int = 5000        # max episodic memories before eviction kicks in
-    eviction_batch_size: int = 50        # how many to evict at once when over capacity
-    forgotten_retrieval_threshold: float = 0.1  # below this strength = "forgotten" (not recalled by default)
+    episodic_capacity: int = 5000
+    eviction_batch_size: int = 50
+    forgotten_retrieval_threshold: float = 0.1
 
     # Dead-end similarity threshold (L2 on unit-normalized vectors: 0=identical, ~1.4=opposite)
     dead_end_similarity_threshold: float = 1.0
@@ -44,9 +50,38 @@ class MemoryConfig:
     db_path: str = "memory.db"
 
     # Embedding
-    embedding_dim: int = 384              # auto-adjusted from loaded model on init
+    embedding_dim: int = 384
     embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"
     embedding_device: str = "cpu"
+
+    def __post_init__(self):
+        """Apply environment variable overrides."""
+        overrides = {
+            "DB_PATH": ("db_path", str),
+            "EPISODIC_CAPACITY": ("episodic_capacity", int),
+            "CONSOLIDATION_THRESHOLD": ("consolidation_score_threshold", float),
+            "DEPTH_L2_THRESHOLD": ("depth_l2_threshold", float),
+            "DEPTH_L3_THRESHOLD": ("depth_l3_threshold", float),
+            "EMBEDDING_MODEL": ("embedding_model", str),
+            "EMBEDDING_DEVICE": ("embedding_device", str),
+        }
+        for env_key, (attr, cast) in overrides.items():
+            val = _env(env_key)
+            if val:
+                try:
+                    setattr(self, attr, cast(val))
+                except (ValueError, TypeError):
+                    pass
+
+    @classmethod
+    def from_env(cls, **kwargs):
+        """Create config from env vars, with optional overrides.
+
+        Usage:
+            config = MemoryConfig.from_env()
+            config = MemoryConfig.from_env(db_path="./custom.db")
+        """
+        return cls(**kwargs)
 
 
 default_config = MemoryConfig()

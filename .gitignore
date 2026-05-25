@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 *.egg-info/
 dist/
+build/
 
 # Databases (user data, not code)
 *.db
@@ -11,6 +12,8 @@ test_*.db
 _debug*.db
 _zh*.db
 agent_*.db
+*.db-shm
+*.db-wal
 
 # Virtual env
 venv/
@@ -19,6 +22,9 @@ venv/
 # IDE
 .vscode/
 .idea/
+
+# npm
+node_modules/
 
 # OS
 .DS_Store

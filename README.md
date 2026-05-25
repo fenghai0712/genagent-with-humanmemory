@@ -2,17 +2,41 @@
 
 模拟人类记忆的 AI Agent 系统——工作记忆、情景记忆、语义记忆、程序记忆、方案记忆，带遗忘曲线、记忆强化和死路避免。
 
-## 安装（一行命令）
+## 安装
+
+### pip（推荐）
 
 ```bash
 pip install git+https://github.com/fenghai0712/genagent-with-humanmemory.git
 ```
 
-**Windows 用户**：如果不熟悉命令行，直接双击 `install.bat`（先确保装了 Python 3.11+，安装时勾选 "Add Python to PATH"）。
+### npm
 
-首次运行会自动下载多语言嵌入模型 `paraphrase-multilingual-MiniLM-L12-v2`（约 470MB），支持中英文跨语言检索。
+```bash
+npm install -g git+https://github.com/fenghai0712/genagent-with-humanmemory.git
+```
 
-**依赖说明**：`sqlite-vec` 提供 Windows 预编译包，`sentence-transformers` 提供中文嵌入模型。首次安装约需下载 2-3GB（含 PyTorch），之后不再需要网络。
+npm 安装会自动触发 pip install 安装 Python 依赖。需要 Python 3.11+ 在 PATH 中。
+
+### Windows 一键安装
+
+下载仓库中的 `install.bat`，双击运行（确保 Python 3.11+ 已安装并勾选 "Add Python to PATH"）。
+
+### 环境变量（可选）
+
+安装后可通过环境变量配置，无需改代码：
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `HUMAN_MEMORY_DB_PATH` | 数据库文件路径 | `memory.db` |
+| `HUMAN_MEMORY_EPISODIC_CAPACITY` | 情景记忆容量上限 | `5000` |
+| `HUMAN_MEMORY_CONSOLIDATION_THRESHOLD` | 编码门槛（0-1） | `0.3` |
+| `HUMAN_MEMORY_DEPTH_L2_THRESHOLD` | L2 标准编码强度阈值 | `0.3` |
+| `HUMAN_MEMORY_DEPTH_L3_THRESHOLD` | L3 深度编码强度阈值 | `0.7` |
+| `HUMAN_MEMORY_EMBEDDING_MODEL` | 嵌入模型名称 | `paraphrase-multilingual-MiniLM-L12-v2` |
+| `HUMAN_MEMORY_EMBEDDING_DEVICE` | 推理设备 | `cpu` |
+
+**依赖说明**：`sqlite-vec` 提供 Windows 预编译包，`sentence-transformers` 提供中文嵌入模型。首次运行会自动下载模型（约 470MB）。
 
 ## 使用
 

@@ -1,0 +1,24 @@
+{
+  "name": "genagent-with-humanmemory",
+  "version": "0.1.0",
+  "description": "模拟人类记忆的 AI Agent 系统 - CLI 工具",
+  "keywords": ["ai", "memory", "agent", "human-memory", "cli"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fenghai0712/genagent-with-humanmemory.git"
+  },
+  "bin": {
+    "memory-agent": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "install.js",
+    "human_memory/",
+    "pyproject.toml",
+    "requirements.txt"
+  ],
+  "scripts": {
+    "postinstall": "node install.js"
+  }
+}
