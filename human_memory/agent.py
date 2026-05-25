@@ -322,19 +322,60 @@ class MemoryAgent:
 # ═══════════════════════════════════════════════════
 # CLI interface
 # ═══════════════════════════════════════════════════
+
+def _setup_llm():
+    """Check for DeepSeek API key, prompt if missing/invalid. Returns llm_fn or None."""
+    import os as _os
+    from human_memory.llm import DeepSeekLLM, validate_deepseek_key
+
+    key = _os.environ.get("DEEPSEEK_API_KEY", "").strip()
+
+    if key:
+        masked = key[:7] + "***" + key[-4:] if len(key) > 11 else "***"
+        print(f"检测到 DEEPSEEK_API_KEY: {masked}")
+        print("正在验证密钥...")
+        valid, msg = validate_deepseek_key(key)
+        if valid:
+            print(f"  [OK] {msg}")
+            return DeepSeekLLM(api_key=key)
+        else:
+            print(f"  [FAIL] {msg}")
+            print("请重新输入有效密钥，或按回车使用模板模式。")
+    else:
+        print("未检测到 DEEPSEEK_API_KEY 环境变量。")
+        print("获取 Key: https://platform.deepseek.com/api_keys")
+        print("输入 Key 以启用 DeepSeek，或按回车使用模板模式。")
+
+    new_key = input("API Key: ").strip()
+    if new_key:
+        print("正在验证...")
+        valid, msg = validate_deepseek_key(new_key)
+        if valid:
+            print(f"  [OK] {msg}")
+            os.environ["DEEPSEEK_API_KEY"] = new_key
+            return DeepSeekLLM(api_key=new_key)
+        else:
+            print(f"  [FAIL] {msg}")
+            print("将使用模板模式，可在对话中用 /key 重新设置。")
+    return None
+
+
 def cli():
     """Interactive CLI for the memory agent."""
-    agent = MemoryAgent()  # db_path from HUMAN_MEMORY_DB_PATH env or default
-
-    llm_name = "DeepSeek" if agent.llm else "无(模板模式)"
+    # ── Key setup ──
     print("=" * 50)
     print("  Memory Agent — 有记忆的 AI 助手")
-    print(f"  LLM: {llm_name}")
-    print("  命令: /stats  /recall <query>  /learn <概念>")
-    print("       /success  /fail  /quit")
     print("=" * 50)
 
-    pending_approach = None
+    llm_fn = _setup_llm()
+    agent = MemoryAgent(llm_fn=llm_fn)
+
+    print()
+    llm_name = type(agent.llm).__name__ if agent.llm else "无(模板模式)"
+    print(f"LLM: {llm_name}")
+    print("命令: /stats  /recall <query>  /learn <概念>  /key")
+    print("      /success  /fail  /quit")
+    print("=" * 50)
 
     while True:
         try:
@@ -383,6 +424,30 @@ def cli():
                     wasted_minutes=10,
                 )
                 print("已记录为失败方案(死路)")
+            elif cmd == "key":
+                from human_memory.llm import DeepSeekLLM, validate_deepseek_key
+
+                if arg:
+                    # Setting a new key
+                    print("正在验证密钥...")
+                    valid, msg = validate_deepseek_key(arg.strip())
+                    if valid:
+                        print(f"  [OK] {msg}")
+                        os.environ["DEEPSEEK_API_KEY"] = arg.strip()
+                        agent.llm = DeepSeekLLM(api_key=arg.strip())
+                        masked = arg.strip()[:7] + "***" + arg.strip()[-4:] if len(arg.strip()) > 11 else "***"
+                        print(f"  已切换到 DeepSeek ({masked})")
+                    else:
+                        print(f"  [FAIL] {msg}")
+                else:
+                    # Show current status
+                    key = os.environ.get("DEEPSEEK_API_KEY", "")
+                    if key:
+                        masked = key[:7] + "***" + key[-4:] if len(key) > 11 else "***"
+                        print(f"当前 Key: {masked}")
+                        print("用法: /key <新密钥>  或  /key 查看状态")
+                    else:
+                        print("未设置 Key。用法: /key sk-xxxxxxxxxxxxxxxx")
             else:
                 print(f"未知命令: {cmd}")
             continue
