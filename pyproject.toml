@@ -13,6 +13,9 @@ dependencies = [
     "sentence-transformers>=3.0.0",
 ]
 
+[project.scripts]
+memory-agent = "human_memory.agent:cli"
+
 [project.optional-dependencies]
 dev = ["pytest>=8.0.0"]
 

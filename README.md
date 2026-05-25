@@ -16,13 +16,15 @@ pip install git+https://github.com/fenghai0712/genagent-with-humanmemory.git
 
 ## 使用
 
-### 方式一：交互式 Agent（命令行对话）
+### 方式一：CLI 命令（安装后直接敲命令）
 
 ```bash
-python -m human_memory.agent
+memory-agent
 ```
 
 支持命令：`/recall` `/stats` `/learn` `/success` `/fail` `/quit`
+
+也可用模块方式启动：`python -m human_memory.agent`
 
 ### 方式二：3 行代码体验
 
