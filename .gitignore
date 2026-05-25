@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+
+# Databases (user data, not code)
+*.db
+demo_*.db
+test_*.db
+_debug*.db
+_zh*.db
+agent_*.db
+
+# Virtual env
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
