@@ -323,16 +323,31 @@ class MemoryAgent:
 # CLI interface
 # ═══════════════════════════════════════════════════
 
+def _read_api_key() -> str:
+    """Get API key: env var > config file > empty."""
+    key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+    if key:
+        return key
+    try:
+        from human_memory.env_file import get_api_key
+        key = get_api_key()
+        if key:
+            os.environ["DEEPSEEK_API_KEY"] = key
+    except Exception:
+        pass
+    return key
+
+
 def _setup_llm():
     """Check for DeepSeek API key, prompt if missing/invalid. Returns llm_fn or None."""
-    import os as _os
     from human_memory.llm import DeepSeekLLM, validate_deepseek_key
+    from human_memory.env_file import save_api_key
 
-    key = _os.environ.get("DEEPSEEK_API_KEY", "").strip()
+    key = _read_api_key()
 
     if key:
         masked = key[:7] + "***" + key[-4:] if len(key) > 11 else "***"
-        print(f"检测到 DEEPSEEK_API_KEY: {masked}")
+        print(f"检测到 API Key: {masked}")
         print("正在验证密钥...")
         valid, msg = validate_deepseek_key(key)
         if valid:
@@ -342,7 +357,7 @@ def _setup_llm():
             print(f"  [FAIL] {msg}")
             print("请重新输入有效密钥，或按回车使用模板模式。")
     else:
-        print("未检测到 DEEPSEEK_API_KEY 环境变量。")
+        print("未检测到 API Key（环境变量或 ~/.genagent/env）。")
         print("获取 Key: https://platform.deepseek.com/api_keys")
         print("输入 Key 以启用 DeepSeek，或按回车使用模板模式。")
 
@@ -352,12 +367,45 @@ def _setup_llm():
         valid, msg = validate_deepseek_key(new_key)
         if valid:
             print(f"  [OK] {msg}")
-            os.environ["DEEPSEEK_API_KEY"] = new_key
+            save_api_key(new_key)
             return DeepSeekLLM(api_key=new_key)
         else:
             print(f"  [FAIL] {msg}")
             print("将使用模板模式，可在对话中用 /key 重新设置。")
     return None
+
+
+FIRST_LAUNCH_BANNER = r"""
+  ┌──────────────────────────────────────────────────┐
+  │                                                  │
+  │   人 类 记 忆 特 性  (Human Memory Traits)        │
+  │                                                  │
+  │  ▎工作记忆  — 7±2 槽位，注意力聚焦，当下会话      │
+  │  ▎情景记忆  — 带时间/情绪/重要性标记的经历         │
+  │  ▎语义记忆  — 概念图，层级化事实知识               │
+  │  ▎程序记忆  — 技能步骤，场景触发自动调用            │
+  │  ▎方案记忆  — 成功路径 + 死路记录，避免反复踩坑    │
+  │                                                  │
+  │  ▎容量竞争遗忘 — 满 5000 条后强度最低的优先淘汰     │
+  │  ▎编码深度     — L1 浅层 → L2 标准 → L3 深度       │
+  │  ▎记忆强化     — 每次回忆增强，间隔效应            │
+  │  ▎跨语言检索   — 英文搜中文/中文搜英文             │
+  │  ▎死路排查     — 尝试前搜索已知失败方案并警告       │
+  │                                                  │
+  │  ※ 这个记忆系统会随着每次对话不断进化。            │
+  │    记忆越用越清晰，经验越积越丰富。                │
+  │                                                  │
+  └──────────────────────────────────────────────────┘
+"""
+
+
+def _is_first_launch(agent: MemoryAgent) -> bool:
+    """Check if this is effectively the first launch (no memories stored)."""
+    try:
+        stats = agent.memory.stats()
+        return stats.get("episodic_total", 0) == 0
+    except Exception:
+        return True
 
 
 def cli():
@@ -369,6 +417,11 @@ def cli():
 
     llm_fn = _setup_llm()
     agent = MemoryAgent(llm_fn=llm_fn)
+
+    # First launch banner
+    first_run = _is_first_launch(agent)
+    if first_run:
+        print(FIRST_LAUNCH_BANNER)
 
     print()
     llm_name = type(agent.llm).__name__ if agent.llm else "无(模板模式)"

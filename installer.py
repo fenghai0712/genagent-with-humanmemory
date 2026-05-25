@@ -150,8 +150,60 @@ except Exception as e:
     return True
 
 
+def _validate_key(key: str) -> tuple:
+    """Inline key validation — avoids importing human_memory at build time."""
+    url = "https://api.deepseek.com/v1/models"
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {key}"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status == 200:
+                return True, "密钥有效"
+            return False, f"状态码 {resp.status}"
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            return False, "密钥无效或已过期 (401)"
+        if e.code == 403:
+            return False, "权限不足 (403)"
+        return False, f"API 错误: {e.code}"
+    except Exception as e:
+        return False, f"网络不通: {e}"
+
+
+def _save_key(key: str) -> None:
+    """Inline key persistence — avoids importing human_memory at build time."""
+    config_dir = Path.home() / ".genagent"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "env"
+    config_file.write_text(
+        f"# genagent config\nDEEPSEEK_API_KEY={key}\n", encoding="utf-8")
+
+
+def setup_api_key():
+    """Prompt for DeepSeek API key, with skip option."""
+    print("\n[步骤 4/5] DeepSeek API Key")
+    print("  获取 Key: https://platform.deepseek.com/api_keys")
+    print("  输入 Key 以启用 AI 对话，或按回车跳过（可之后设置）")
+
+    key = input("  API Key: ").strip()
+    if not key:
+        print("  已跳过。之后可通过以下方式设置:")
+        print("    set DEEPSEEK_API_KEY=sk-xxx")
+        print("    或在 memory-agent 启动时输入")
+        return
+
+    print("  正在验证...")
+    valid, msg = _validate_key(key)
+    if valid:
+        print(f"  [OK] {msg}")
+        _save_key(key)
+        print(f"  Key 已保存到 ~/.genagent/env")
+    else:
+        print(f"  [FAIL] {msg}")
+        print("  Key 未保存。启动 memory-agent 时可重新输入。")
+
+
 def show_usage():
-    print("\n[步骤 4/4] 安装完成！")
+    print("\n[步骤 5/5] 安装完成！")
     print("=" * 56)
     print()
     print("  使用方法:")
@@ -219,7 +271,10 @@ def main():
         input("\n按回车退出...")
         return 1
 
-    # Step 4: done
+    # Step 4: API key
+    setup_api_key()
+
+    # Step 5: done
     show_usage()
     input("\n按回车退出...")
     return 0
