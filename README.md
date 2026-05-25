@@ -2,21 +2,17 @@
 
 模拟人类记忆的 AI Agent 系统——工作记忆、情景记忆、语义记忆、程序记忆、方案记忆，带遗忘曲线、记忆强化和死路避免。
 
-## 安装
+## 安装（一行命令）
 
 ```bash
-# 1. 克隆仓库
-git clone https://github.com/fenghai0712/genagent-with-humanmemory.git
-cd genagent-with-humanmemory
-
-# 2. 安装依赖
-pip install -r requirements.txt
-
-# 3. （可选）以开发模式安装，方便 import
-pip install -e .
+pip install git+https://github.com/fenghai0712/genagent-with-humanmemory.git
 ```
 
+**Windows 用户**：如果不熟悉命令行，直接双击 `install.bat`（先确保装了 Python 3.11+，安装时勾选 "Add Python to PATH"）。
+
 首次运行会自动下载多语言嵌入模型 `paraphrase-multilingual-MiniLM-L12-v2`（约 470MB），支持中英文跨语言检索。
+
+**依赖说明**：`sqlite-vec` 提供 Windows 预编译包，`sentence-transformers` 提供中文嵌入模型。首次安装约需下载 2-3GB（含 PyTorch），之后不再需要网络。
 
 ## 使用
 
@@ -26,16 +22,7 @@ pip install -e .
 python -m human_memory.agent
 ```
 
-支持命令：
-
-| 命令 | 说明 |
-|------|------|
-| `/recall <关键词>` | 搜索记忆 |
-| `/stats` | 查看记忆统计 |
-| `/learn <概念>` | 手动学习概念 |
-| `/success` | 标记成功方案 |
-| `/fail` | 标记失败方案（死路） |
-| `/quit` | 退出 |
+支持命令：`/recall` `/stats` `/learn` `/success` `/fail` `/quit`
 
 ### 方式二：3 行代码体验
 
@@ -43,8 +30,6 @@ python -m human_memory.agent
 from human_memory import MemoryManager
 
 mm = MemoryManager()
-
-# 记录事件
 mm.remember("用户在排查 PostgreSQL 慢查询，EXPLAIN 显示 seq scan", explicit_signal=True)
 mm.consolidate()
 
@@ -62,15 +47,6 @@ agent = MemoryAgent()
 
 # 每轮对话走完整 pipeline：感知 → 回忆 → 思考 → 行动 → 学习
 response = agent.run("我的数据库查询很慢，怎么办？")
-print(response)
-
-# 解决问题后记录方案
-agent.record_success(
-    problem_type="慢查询",
-    problem_desc="PostgreSQL seq scan",
-    approach="添加复合索引覆盖 WHERE + ORDER BY",
-    why="索引覆盖了查询的所有过滤和排序字段"
-)
 
 # 记录死路（以后会主动警告）
 agent.record_failure(
@@ -88,20 +64,8 @@ agent.end_session()
 ### 方式四：接入你的 LLM
 
 ```python
-def my_llm(prompt: str) -> str:
-    # prompt 已包含所有记忆上下文
-    return your_api_call(prompt)
-
-agent = MemoryAgent(llm_fn=my_llm)
+agent = MemoryAgent(llm_fn=your_api_call)
 response = agent.run("帮我查一下昨天的那个 bug")
-```
-
-### 运行演示和测试
-
-```bash
-python demo.py                          # 8 阶段完整演示
-python examples/agent_integration.py    # Agent 集成示例
-python -m pytest tests/ -v              # 25 个测试
 ```
 
 ## 记忆类型
@@ -116,7 +80,7 @@ python -m pytest tests/ -v              # 25 个测试
 
 ## 核心机制
 
-- **容量竞争遗忘**：活跃记忆超过 5000 条时，强度最低的被淘汰（不是按天数）
+- **容量竞争遗忘**：活跃记忆超过 5000 条时，强度最低的被淘汰
 - **编码深度**：L1 浅层 → L2 标准（strength≥0.3）→ L3 深度（≥0.7）
 - **记忆强化**：每次回忆增强 strength，间隔效应（同日重复收益递减）
 - **死路排查**：尝试新方向前，先搜索是否匹配已知死路
@@ -125,34 +89,22 @@ python -m pytest tests/ -v              # 25 个测试
 ## 配置
 
 ```python
-from human_memory import MemoryConfig
+from human_memory import MemoryConfig, MemoryAgent
 
 config = MemoryConfig(
-    episodic_capacity=5000,           # 情景记忆上限
+    episodic_capacity=5000,              # 情景记忆上限
     consolidation_score_threshold=0.25,  # 编码门槛（越低记越多）
-    depth_l2_threshold=0.3,           # 升级到标准编码的强度阈值
-    depth_l3_threshold=0.7,           # 升级到深度编码的强度阈值
-    embedding_model="paraphrase-multilingual-MiniLM-L12-v2",
+    depth_l2_threshold=0.3,              # 升级到标准编码的强度阈值
+    depth_l3_threshold=0.7,              # 升级到深度编码的强度阈值
 )
-
 agent = MemoryAgent(config=config)
 ```
 
-## 项目结构
+## 测试
 
-```
-human_memory/
-├── agent.py             # Agent 循环（感知→回忆→思考→行动→学习）
-├── memory_manager.py    # 中央协调器
-├── working_memory.py    # 工作记忆
-├── encoding.py          # 编码 + 巩固 + 强化 + 维护
-├── retrieval.py         # 检索 + 死路排查
-├── database.py          # SQLite + sqlite-vec
-├── embedding.py         # 多语言嵌入模型
-├── config.py            # 全部可调参数
-└── models/__init__.py   # 数据模型
-tests/
-examples/
+```bash
+python demo.py                          # 8 阶段完整演示
+python -m pytest tests/ -v              # 25 个测试
 ```
 
 ## 许可
