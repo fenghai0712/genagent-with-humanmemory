@@ -17,6 +17,7 @@ Usage:
 from human_memory.memory_manager import MemoryManager
 from human_memory.config import MemoryConfig
 from human_memory.embedding import EmbeddingProvider
+from human_memory.llm import DeepSeekLLM, auto_llm
 from human_memory.models import (
     SolutionAttempt,
     DeadEndRecord,
@@ -28,6 +29,8 @@ __all__ = [
     "MemoryManager",
     "MemoryConfig",
     "EmbeddingProvider",
+    "DeepSeekLLM",
+    "auto_llm",
     "SolutionAttempt",
     "DeadEndRecord",
     "AttemptOutcome",

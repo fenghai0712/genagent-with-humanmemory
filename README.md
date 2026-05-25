@@ -87,11 +87,37 @@ agent.record_failure(
 agent.end_session()
 ```
 
-### 方式四：接入你的 LLM
+### 方式四：接入 DeepSeek（内置）
+
+```bash
+# 设置 API Key（二选一）
+# Windows:
+set DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
+
+# macOS / Linux:
+export DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
+```
+
+```python
+from human_memory.agent import MemoryAgent
+
+# Agent 自动检测 DEEPSEEK_API_KEY，无需传 llm_fn
+agent = MemoryAgent()
+response = agent.run("帮我查一下昨天那个 bug")
+```
+
+也可显式传入：
+```python
+from human_memory import DeepSeekLLM
+
+agent = MemoryAgent(llm_fn=DeepSeekLLM(api_key="sk-xxx"))
+```
+
+### 方式五：接入自定义 LLM
 
 ```python
 agent = MemoryAgent(llm_fn=your_api_call)
-response = agent.run("帮我查一下昨天的那个 bug")
+response = agent.run("今天天气怎么样")
 ```
 
 ## 记忆类型

@@ -18,7 +18,12 @@ from human_memory.models import now_iso, new_id
 
 class MemoryAgent:
     """An agent that perceives, recalls, thinks, acts, and learns — backed by
-    the human-like memory system at every step."""
+    the human-like memory system at every step.
+
+    Built-in LLM auto-detection:
+        Set DEEPSEEK_API_KEY env var → automatically uses DeepSeek.
+        Or pass llm_fn for any custom LLM backend.
+    """
 
     def __init__(self, db_path: Optional[str] = None,
                  config: Optional[MemoryConfig] = None,
@@ -32,7 +37,13 @@ class MemoryAgent:
                 consolidation_score_threshold=0.25,
             )
         self.memory = MemoryManager(config=config)
-        self.llm = llm_fn  # optional LLM backend
+
+        # Auto-detect built-in LLM from env
+        if llm_fn is None:
+            from human_memory.llm import auto_llm
+            llm_fn = auto_llm()
+
+        self.llm = llm_fn
         self.session_id = new_id()
         self.session_started_at = now_iso()
         self.turn_count = 0
@@ -315,8 +326,10 @@ def cli():
     """Interactive CLI for the memory agent."""
     agent = MemoryAgent()  # db_path from HUMAN_MEMORY_DB_PATH env or default
 
+    llm_name = "DeepSeek" if agent.llm else "无(模板模式)"
     print("=" * 50)
     print("  Memory Agent — 有记忆的 AI 助手")
+    print(f"  LLM: {llm_name}")
     print("  命令: /stats  /recall <query>  /learn <概念>")
     print("       /success  /fail  /quit")
     print("=" * 50)
