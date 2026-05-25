@@ -4,7 +4,14 @@
 
 ## 安装
 
-### pip（推荐）
+### Windows 一键安装器（推荐，无需翻墙）
+
+1. 从 [GitHub Releases](../../releases) 下载 `genagent-installer.exe`（约 8 MB）
+2. 双击运行，自动完成安装
+
+安装器全程走国内镜像（清华 PyPI + hf-mirror），无需翻墙，约需下载 2-3 GB 依赖。已安装 Python 3.11+ 即可使用。
+
+### pip（开发者）
 
 ```bash
 pip install git+https://github.com/fenghai0712/genagent-with-humanmemory.git
